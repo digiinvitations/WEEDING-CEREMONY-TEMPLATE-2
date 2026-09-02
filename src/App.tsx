@@ -27,6 +27,7 @@ import {
 import { weddingConfig as defaultWeddingConfig, WeddingConfig } from "./weddingConfig";
 import { GaneshaIcon } from "./components/GaneshaIcon";
 import { OrnateFrame } from "./components/OrnateFrame";
+import { Preloader } from "./components/Preloader";
 import { EnvelopeCover } from "./components/EnvelopeCover";
 import { RSVPModal } from "./components/RSVPModal";
 import { AdminPanel } from "./components/AdminPanel";
@@ -161,6 +162,7 @@ export default function App() {
   };
 
   // Opening flow states
+  const [isPreloading, setIsPreloading] = useState(true);
   const [isOpened, setIsOpened] = useState(false);
   const [isDateRevealed, setIsDateRevealed] = useState(false);
   const [isMonthRevealed, setIsMonthRevealed] = useState(false);
@@ -451,7 +453,16 @@ export default function App() {
     }
   };
   return (
-    <div className="min-h-[100dvh] bg-[#FFF8F3] bg-gradient-to-b from-[#FFF8F3] to-[#ffece0] font-sans relative text-gray-800">
+    <>
+      {isPreloading && (
+        <Preloader 
+          config={config} 
+          onFinished={() => setIsPreloading(false)} 
+        />
+      )}
+      
+      {!isPreloading && (
+        <div className="min-h-[100dvh] bg-[#FFF8F3] bg-gradient-to-b from-[#FFF8F3] to-[#ffece0] font-sans relative text-gray-800">
       
       <audio ref={audioRef} src={actualMusicUrl || undefined} loop preload="auto" playsInline className="hidden" onError={(e) => console.warn("Audio could not load.")} onPlay={() => console.log("Audio playing!")} />
       
@@ -1205,5 +1216,7 @@ export default function App() {
       />
 
     </div>
+      )}
+    </>
   );
 }
