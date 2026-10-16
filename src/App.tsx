@@ -21,7 +21,8 @@ import {
   Instagram,
   Facebook,
   Maximize2,
-  Flower2
+  Flower2,
+  Edit3
 } from "lucide-react";
 
 import { weddingConfig as defaultWeddingConfig, WeddingConfig } from "./weddingConfig";
@@ -31,6 +32,7 @@ import { Preloader } from "./components/Preloader";
 import { EnvelopeCover } from "./components/EnvelopeCover";
 import { RSVPModal } from "./components/RSVPModal";
 import { AdminPanel } from "./components/AdminPanel";
+import { EditInvitationModal } from "./components/EditInvitationModal";
 import { ScratchReveal } from "./components/ScratchReveal";
 import { FallingFlowers } from "./components/FallingFlowers";
 import { FallingPetals } from "./components/FallingPetals";
@@ -247,8 +249,35 @@ export default function App() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [actualMusicUrl, setActualMusicUrl] = useState("");
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showEditInvitationModal, setShowEditInvitationModal] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Automatically pause background music when user exits the tab/window or navigates away
+  useEffect(() => {
+    const handlePauseOnExit = () => {
+      if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.pause();
+        setMusicPlaying(false);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        handlePauseOnExit();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pagehide", handlePauseOnExit);
+    window.addEventListener("beforeunload", handlePauseOnExit);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pagehide", handlePauseOnExit);
+      window.removeEventListener("beforeunload", handlePauseOnExit);
+    };
+  }, []);
 
   // Handle Audio Player
   useEffect(() => {
@@ -1017,6 +1046,12 @@ export default function App() {
                       href={event.mapDirectionsUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => {
+                        if (audioRef.current) {
+                          audioRef.current.pause();
+                          setMusicPlaying(false);
+                        }
+                      }}
                       className="inline-flex items-center justify-center gap-2 bg-gold-gradient text-white px-6 py-2.5 rounded-full text-xs font-bold tracking-wider hover:shadow-xl transition-all w-fit mt-auto group"
                     >
                       <MapPin className="w-4 h-4 group-hover:scale-110 transition-transform" />
@@ -1166,7 +1201,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Scroll-to-Top Toggle (Bottom Right) */}
+      {/* Scroll-to-Top Toggle (Bottom Right - stacked above Edit button) */}
       <AnimatePresence>
         {isOpened && showScrollTop && (
           <motion.div
@@ -1174,7 +1209,7 @@ export default function App() {
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
-            className="fixed bottom-6 right-6 z-40 group"
+            className="fixed bottom-20 right-6 z-40 group"
           >
             <div className="relative">
               <div className="absolute -top-3 -right-3 text-pink-400 rotate-[30deg] opacity-80 pointer-events-none transition-transform group-hover:scale-110">
@@ -1195,7 +1230,29 @@ export default function App() {
         )}
       </AnimatePresence>
 
-
+      {/* Floating "Edit Your Invitation" Button (Bottom Right) */}
+      {isOpened && (
+        <motion.div
+          key="floating-edit-btn"
+          initial={{ opacity: 0, scale: 0.85, y: 15 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="fixed bottom-6 right-6 z-40"
+        >
+          <button
+            onClick={() => setShowEditInvitationModal(true)}
+            className="flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-full bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 hover:from-amber-700 hover:via-amber-800 hover:to-amber-900 text-white shadow-xl hover:shadow-2xl border border-amber-300/60 font-semibold text-xs tracking-wide cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300 backdrop-blur-sm group"
+            title="Edit Your Invitation"
+          >
+            <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform">
+              <Edit3 size={13} className="text-white stroke-[2.5]" />
+            </span>
+            <span className="whitespace-nowrap text-[11px] sm:text-xs">
+              Edit Your Invitation
+            </span>
+          </button>
+        </motion.div>
+      )}
 
       {/* RSVP Confirmation Modal */}
       <RSVPModal
@@ -1213,6 +1270,13 @@ export default function App() {
         onClose={() => setShowAdmin(false)}
         config={config}
         onConfigChange={handleConfigChange}
+      />
+
+      {/* Client Edit Your Invitation Modal & WhatsApp Redirection */}
+      <EditInvitationModal
+        isOpen={showEditInvitationModal}
+        onClose={() => setShowEditInvitationModal(false)}
+        currentConfig={config}
       />
 
     </div>
